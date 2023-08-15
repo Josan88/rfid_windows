@@ -17,8 +17,29 @@ def sql_insert(mydb, epidString, timestamp):
     print(mycursor.rowcount, "record inserted.")
 
 
-# Create a list to store dictionary of scanned tags and timestamps
-tagDataList = []
+def sql_update(mydb, epidString, timestamp):
+    mycursor = mydb.cursor()
+    sql = "UPDATE rfid SET last_seen = %s WHERE epid = %s"
+    val = (timestamp, epidString)
+    mycursor.execute(sql, val)
+    mydb.commit()
+    print(mycursor.rowcount, "record updated.")
+
+
+def sql_select(mydb, epidString):
+    mycursor = mydb.cursor()
+    sql = "SELECT * FROM rfid WHERE epid = %s"
+    val = (epidString,)
+    mycursor.execute(sql, val)
+    myresult = mycursor.fetchall()
+    if myresult:
+        return True
+    else:
+        return False
+
+
+# # Create a list to store dictionary of scanned tags and timestamps
+# tagDataList = []
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,21 +85,14 @@ def tagSearch(rawData):
                 epidString = epid.hex()
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-                # Check if the tag has been scanned before
-                if epidString in [d["epid"] for d in tagDataList]:
-                    # If yes, update the timestamp
-                    for d in tagDataList:
-                        if d["epid"] == epidString:
-                            d["timestamp"] = timestamp
-                elif (
-                    epidString not in [d["epid"] for d in tagDataList]
-                    and epidString != ""
-                ):
-                    # If no, add the tag to the list
-                    tagDataList.append({"epid": epidString, "timestamp": timestamp})
-
-                print(tagDataList)
-                sql_insert(mydb, epidString, timestamp)
+                # Find the registered tag in mysql database
+                # If tag is found, update the last_seen column
+                # If tag is not found, insert the tag into the database
+                if sql_select(mydb, epidString):
+                    sql_update(mydb, epidString, timestamp)
+                    sql_insert(mydb, epidString, timestamp)
+                elif sql_select(mydb, epidString) == False and epidString != "":
+                    print("New tag found")
 
             i += tagLength + 4  # step 4
 
