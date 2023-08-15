@@ -61,9 +61,9 @@ def tagSearch(rawData):
                     # If no, add the tag to the list
                     tagDataList.append({"epid": epidString, "timestamp": timestamp})
 
-                print(tagDataList)
+            i += tagLength + 4
 
-            i += tagLength + 4  # step 4
+    return epidString, timestamp
 
 
 while True:
@@ -77,8 +77,8 @@ while True:
         # Receive the data in small chunks and retransmit it
         while True:
             data = connection.recv(1024)
-            tagSearch(data)
-
+            if data:
+                tagSearch(data)
     finally:
         # Clean up the connection
         connection.close()
