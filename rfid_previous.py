@@ -1,7 +1,6 @@
 import time
 import socket
 import mysql.connector
-import functools
 
 # Connect to the database
 mydb = mysql.connector.connect(
@@ -9,37 +8,22 @@ mydb = mysql.connector.connect(
 )
 
 
-# Create a cache decorator
-def cache(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        key = str(args) + str(kwargs)
-        if key in wrapper.cache:
-            return wrapper.cache[key]
-        else:
-            result = func(*args, **kwargs)
-            wrapper.cache[key] = result
-            return result
-
-    wrapper.cache = {}
-    return wrapper
-
-
 def sql_insert(mydb, epidString, timestamp):
     mycursor = mydb.cursor()
-    sql = "INSERT INTO vehicle_logbook (epid, seen_datetime) VALUES (%s, %s)"
-    val = (epidString, timestamp)
+    sql = "INSERT INTO vehicle_logbook (epid, seen_datetime, reader_ip) VALUES (%s, %s, %s)"
+    val = (epidString, timestamp, client_address[0])
     mycursor.execute(sql, val)
     mydb.commit()
+
 
 def sql_update(mydb, epidString, timestamp):
     mycursor = mydb.cursor()
-    sql = "UPDATE rfid SET last_seen = %s WHERE epid = %s"
-    val = (timestamp, epidString)
+    sql = "UPDATE rfid SET last_seen = %s, reader_ip = %s WHERE epid = %s"
+    val = (timestamp, client_address[0], epidString)
     mycursor.execute(sql, val)
     mydb.commit()
-    
-@cache
+
+
 def sql_select(mydb, epidString):
     mycursor = mydb.cursor()
     sql = "SELECT * FROM rfid WHERE epid = %s"
@@ -103,25 +87,27 @@ def tagSearch(rawData):
                 if resp == True and epidString != "":
                     sql_update(mydb, epidString, timestamp)
                     sql_insert(mydb, epidString, timestamp)
+                    print("Tag found")
                 elif resp == False and epidString != "":
                     print("Tag not found")
 
             i += tagLength + 4  # step 4
 
 
-while True:
-    # Wait for a connection
-    print("waiting for a connection")
-    connection, client_address = sock.accept()
+if __name__ == "__main__":
+    while True:
+        # Wait for a connection
+        print("waiting for a connection")
+        connection, client_address = sock.accept()
 
-    try:
-        print("connection from", client_address)
+        try:
+            print("connection from", client_address)
 
-        # Receive the data in small chunks and retransmit it
-        while True:
-            data = connection.recv(1024)
-            tagSearch(data)
+            # Receive the data in small chunks and retransmit it
+            while True:
+                data = connection.recv(1024)
+                tagSearch(data)
 
-    finally:
-        # Clean up the connection
-        connection.close()
+        finally:
+            # Clean up the connection
+            connection.close()
