@@ -93,6 +93,7 @@ def tagSearch(rawData):
 
             i += tagLength + 4  # step 4
 
+
 if __name__ == "__main__":
     while True:
         # Wait for a connection
