@@ -1,4 +1,4 @@
-# Project Name
+# Python RFID program
 A brief description of the project.
 
 # Installation
