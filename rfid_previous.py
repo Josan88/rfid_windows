@@ -1,8 +1,56 @@
 import time
 import socket
+import mysql.connector
+import functools
 
-# Create a list to store dictionary of scanned tags and timestamps
-tagDataList = []
+# Connect to the database
+mydb = mysql.connector.connect(
+    host="localhost", user="rfid", passwd="softworld", database="stc"
+)
+
+
+# Create a cache decorator
+def cache(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key in wrapper.cache:
+            return wrapper.cache[key]
+        else:
+            result = func(*args, **kwargs)
+            wrapper.cache[key] = result
+            return result
+
+    wrapper.cache = {}
+    return wrapper
+
+
+def sql_insert(mydb, epidString, timestamp):
+    mycursor = mydb.cursor()
+    sql = "INSERT INTO vehicle_logbook (epid, seen_datetime) VALUES (%s, %s)"
+    val = (epidString, timestamp)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+def sql_update(mydb, epidString, timestamp):
+    mycursor = mydb.cursor()
+    sql = "UPDATE rfid SET last_seen = %s WHERE epid = %s"
+    val = (timestamp, epidString)
+    mycursor.execute(sql, val)
+    mydb.commit()
+    
+@cache
+def sql_select(mydb, epidString):
+    mycursor = mydb.cursor()
+    sql = "SELECT * FROM rfid WHERE epid = %s"
+    val = (epidString,)
+    mycursor.execute(sql, val)
+    myresult = mycursor.fetchall()
+    if myresult:
+        return True
+    else:
+        return False
+
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,22 +96,17 @@ def tagSearch(rawData):
                 epidString = epid.hex()
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-                # Check if the tag has been scanned before
-                if epidString in [d["epid"] for d in tagDataList]:
-                    # If yes, update the timestamp
-                    for d in tagDataList:
-                        if d["epid"] == epidString:
-                            d["timestamp"] = timestamp
-                elif (
-                    epidString not in [d["epid"] for d in tagDataList]
-                    and epidString != ""
-                ):
-                    # If no, add the tag to the list
-                    tagDataList.append({"epid": epidString, "timestamp": timestamp})
+                # Find the registered tag in mysql database
+                # If tag is found, update the last_seen column
+                # If tag is not found, insert the tag into the database
+                resp = sql_select(mydb, epidString)
+                if resp == True and epidString != "":
+                    sql_update(mydb, epidString, timestamp)
+                    sql_insert(mydb, epidString, timestamp)
+                elif resp == False and epidString != "":
+                    print("Tag not found")
 
-            i += tagLength + 4
-
-    return epidString, timestamp
+            i += tagLength + 4  # step 4
 
 
 while True:
@@ -77,8 +120,8 @@ while True:
         # Receive the data in small chunks and retransmit it
         while True:
             data = connection.recv(1024)
-            if data:
-                tagSearch(data)
+            tagSearch(data)
+
     finally:
         # Clean up the connection
         connection.close()

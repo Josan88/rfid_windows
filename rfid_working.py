@@ -14,7 +14,6 @@ def sql_insert(mydb, epidString, timestamp):
     val = (epidString, timestamp)
     mycursor.execute(sql, val)
     mydb.commit()
-    print(mycursor.rowcount, "record inserted.")
 
 
 def sql_update(mydb, epidString, timestamp):
@@ -23,7 +22,6 @@ def sql_update(mydb, epidString, timestamp):
     val = (timestamp, epidString)
     mycursor.execute(sql, val)
     mydb.commit()
-    print(mycursor.rowcount, "record updated.")
 
 
 def sql_select(mydb, epidString):
@@ -37,9 +35,6 @@ def sql_select(mydb, epidString):
     else:
         return False
 
-
-# # Create a list to store dictionary of scanned tags and timestamps
-# tagDataList = []
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -88,28 +83,30 @@ def tagSearch(rawData):
                 # Find the registered tag in mysql database
                 # If tag is found, update the last_seen column
                 # If tag is not found, insert the tag into the database
-                if sql_select(mydb, epidString):
+                resp = sql_select(mydb, epidString)
+                if resp == True and epidString != "":
                     sql_update(mydb, epidString, timestamp)
                     sql_insert(mydb, epidString, timestamp)
-                elif sql_select(mydb, epidString) == False and epidString != "":
-                    print("New tag found")
+                    print("Tag found")
+                elif resp == False and epidString != "":
+                    print("Tag not found")
 
             i += tagLength + 4  # step 4
 
+if __name__ == "__main__":
+    while True:
+        # Wait for a connection
+        print("waiting for a connection")
+        connection, client_address = sock.accept()
 
-while True:
-    # Wait for a connection
-    print("waiting for a connection")
-    connection, client_address = sock.accept()
+        try:
+            print("connection from", client_address)
 
-    try:
-        print("connection from", client_address)
+            # Receive the data in small chunks and retransmit it
+            while True:
+                data = connection.recv(1024)
+                tagSearch(data)
 
-        # Receive the data in small chunks and retransmit it
-        while True:
-            data = connection.recv(1024)
-            tagSearch(data)
-
-    finally:
-        # Clean up the connection
-        connection.close()
+        finally:
+            # Clean up the connection
+            connection.close()
