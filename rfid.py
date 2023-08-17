@@ -1,6 +1,9 @@
 import time
 import socket
 import mysql.connector
+import pystray
+import PIL.Image
+
 
 # Connect to the database
 mydb = mysql.connector.connect(
@@ -94,6 +97,21 @@ def tagSearch(rawData):
             i += tagLength + 4  # step 4
 
 
+# Appear in tray
+def on_clicked(icon, item):
+    if str(item) == "Exit":
+        icon.stop()
+    else:
+        print("do nothing")
+
+
+image_logo = PIL.Image.open("rfid-icon.jpg")
+
+icon = pystray.Icon(
+    "RFID", image_logo, menu=pystray.Menu(pystray.MenuItem("Exit", on_clicked))
+)
+
+
 if __name__ == "__main__":
     while True:
         # Wait for a connection
@@ -106,6 +124,8 @@ if __name__ == "__main__":
             # Receive the data in small chunks and retransmit it
             while True:
                 data = connection.recv(1024)
+                print(len(data))
+                print(data)
                 tagSearch(data)
 
         finally:
