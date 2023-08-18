@@ -1,40 +1,54 @@
 import time
 import socket
 import mysql.connector
+import logging
 
 
 # Connect to the database
-mydb = mysql.connector.connect(
-    host="localhost", user="rfid", passwd="softworld", database="stc"
-)
+def connect_to_database():
+    return mysql.connector.connect(
+        host="localhost", user="rfid", passwd="softworld", database="stc"
+    )
 
 
-def sql_insert(mydb, epidString, timestamp):
-    mycursor = mydb.cursor()
-    sql = "INSERT INTO vehicle_logbook (epid, seen_datetime, reader_ip) VALUES (%s, %s, %s)"
+# Insert a new record into the database
+def insert_record(mydb, epidString, timestamp, client_address):
+    sql = "INSERT INTO car_logbook (epid, car_seen_datetime, reader_ip) VALUES (%s, %s, %s)"
     val = (epidString, timestamp, client_address[0])
-    mycursor.execute(sql, val)
-    mydb.commit()
+    with mydb.cursor() as mycursor:
+        mycursor.execute(sql, val)
+        mydb.commit()
 
 
-def sql_update(mydb, epidString, timestamp):
-    mycursor = mydb.cursor()
-    sql = "UPDATE rfid SET last_seen = %s, reader_ip = %s WHERE epid = %s"
+# Update an existing record in the database
+def update_record(mydb, epidString, timestamp, client_address):
+    sql = "UPDATE rfid SET car_lastseen = %s, reader_ip = %s WHERE epid = %s"
     val = (timestamp, client_address[0], epidString)
-    mycursor.execute(sql, val)
-    mydb.commit()
+    with mydb.cursor() as mycursor:
+        mycursor.execute(sql, val)
+        mydb.commit()
 
 
-def sql_select(mydb, epidString):
-    mycursor = mydb.cursor()
+# Update reader last seen in the database
+def update_reader(mydb, timestamp, client_address):
+    sql = "UPDATE rfid_reader SET reader_lastseen = %s WHERE reader_ip = %s"
+    val = (timestamp, client_address[0])
+    with mydb.cursor() as mycursor:
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+
+# Check if a record exists in the database
+def select_record(mydb, epidString):
     sql = "SELECT * FROM rfid WHERE epid = %s"
     val = (epidString,)
-    mycursor.execute(sql, val)
-    myresult = mycursor.fetchall()
-    if myresult:
-        return True
-    else:
-        return False
+    with mydb.cursor() as mycursor:
+        mycursor.execute(sql, val)
+        myresult = mycursor.fetchall()
+        if myresult:
+            return True
+        else:
+            return False
 
 
 # CRC check function
@@ -47,71 +61,87 @@ def crc16_calc(data, crc=0xFFFF, xorout=0):
     return crc ^ xorout
 
 
-def tagSearch(rawData):
-    rawDataLength = len(rawData)
-    i = 0
-    while i < rawDataLength:
-        if rawData[i] == 170 and rawData[i + 1] == 170:  # step 1
-            tagLength = rawData[i + 3]  # step 2
-            oneTag = rawData[
-                i : i + tagLength + 3
-            ]  # full tag bytes including crc bytes
-            oneTagString = oneTag.hex()
-            oneTagCheck = oneTag[: tagLength + 1]  # full tag bytes excluding crc bytes
-            oneTagCrcBytes = oneTag[tagLength + 1 : tagLength + 3].hex()  # step 3
-            crc16Check = hex(crc16_calc(oneTagCheck))[2:]
+# Process a single tag
+def process_tag(mydb, tag, client_address):
+    tagLength = tag[3]
+    oneTag = tag[: tagLength + 4]
+    oneTagCheck = oneTag[: tagLength + 1]
+    oneTagCrcBytes = oneTag[tagLength + 1 : tagLength + 3].hex()
+    crc16Check = hex(crc16_calc(oneTagCheck))[2:]
 
-            if crc16Check == oneTagCrcBytes:
-                epid = oneTag[
-                    10:25
-                ]  # Can be further improved - Will have issues with integrated reader (without antenna)
-                epidString = epid.hex()
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    if crc16Check == oneTagCrcBytes:
+        epid = oneTag[10:25]
+        epidString = epid.hex()
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-                # Find the registered tag in mysql database
-                # If tag is found, update the last_seen column
-                # If tag is not found, insert the tag into the database
-                resp = sql_select(mydb, epidString)
-                if resp == True and epidString != "":
-                    sql_update(mydb, epidString, timestamp)
-                    sql_insert(mydb, epidString, timestamp)
-                    print("Tag found")
-                elif resp == False and epidString != "":
-                    print("Tag not found")
+        # Find the registered tag in mysql database
+        # If tag is found, update the last_seen column
+        # If tag is not found, insert the tag into the database
+        resp = select_record(mydb, epidString)
+        if resp == True and epidString != "":
+            update_record(mydb, epidString, timestamp, client_address)
+            update_reader(mydb, timestamp, client_address)
+            insert_record(mydb, epidString, timestamp, client_address)
+            logging.info("Tag found")
 
-            i += tagLength + 4  # step 4
-        else:
-            i += 1
+        elif resp == False and epidString != "":
+            logging.info("Tag not found")
 
 
 if __name__ == "__main__":
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    # Set a timeout period on the socket
+    sock.settimeout(5)
+
     # Bind the socket to the port
     server_address = ("192.168.2.115", 8010)
 
-    print("starting up on %s port %s" % server_address)
+    logging.basicConfig(
+        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
+    )
+
+    logging.info("Starting up on %s port %s" % server_address)
     sock.bind(server_address)
 
     # Listen for incoming connections
     sock.listen(1)
 
     # Wait for a connection
-    print("waiting for a connection")
-    connection, client_address = sock.accept()
-    try:
-        print("connection from", client_address)
+    while True:
+        try:
+            connection, client_address = sock.accept()
+            break
+        except socket.timeout:
+            logging.error("Accept timed out")
 
-        # Receive the data in small chunks and retransmit it
+    logging.info("Connection from %s", client_address)
+
+    with connect_to_database() as mydb:
         while True:
-            data = connection.recv(1024)
-            if data:
-                tagSearch(data)
-            else:
-                print("no more data from", client_address)
-                break
+            try:
+                # Receive data from the client
+                data = connection.recv(1024)
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                if data.hex() == "aaaaff06c10215e8a2":
+                    update_reader(mydb, timestamp, client_address)
+                elif data:
+                    rawDataLength = len(data)
+                    i = 0
+                    while i < rawDataLength:
+                        if data[i] == 170 and data[i + 1] == 170:
+                            process_tag(mydb, data[i:], client_address)
+                            i += data[i + 3] + 4
+                        else:
+                            i += 1
 
-    except KeyboardInterrupt:
-        connection.close()
-        print("connection closed")
+            except socket.timeout:
+                logging.error("Receive timed out")
+                connection.close()
+                exit()
+
+            except Exception as e:
+                logging.error("Error: %s", e)
+                connection.close()
+                exit()
