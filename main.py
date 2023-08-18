@@ -112,7 +112,6 @@ if __name__ == "__main__":
                 print("no more data from", client_address)
                 break
 
-    finally:
-        # Clean up the connection
+    except KeyboardInterrupt:
         connection.close()
         print("connection closed")
