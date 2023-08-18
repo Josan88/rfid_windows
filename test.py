@@ -123,11 +123,10 @@ if __name__ == "__main__":
             try:
                 # Receive data from the client
                 data = connection.recv(1024)
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 if data.hex() == "aaaaff06c10215e8a2":
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     update_reader(mydb, timestamp, client_address)
                 elif data:
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     rawDataLength = len(data)
                     i = 0
                     while i < rawDataLength:
