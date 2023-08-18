@@ -97,22 +97,22 @@ if __name__ == "__main__":
     # Listen for incoming connections
     sock.listen(1)
 
-    while True:
-        # Wait for a connection
-        print("waiting for a connection")
-        connection, client_address = sock.accept()
-        try:
-            print("connection from", client_address)
+    # Wait for a connection
+    print("waiting for a connection")
+    connection, client_address = sock.accept()
+    try:
+        print("connection from", client_address)
 
-            # Receive the data in small chunks and retransmit it
-            while True:
-                data = connection.recv(1024)
-                if data:
-                    tagSearch(data)
-                else:
-                    print("no more data from", client_address)
-                    break
+        # Receive the data in small chunks and retransmit it
+        while True:
+            data = connection.recv(1024)
+            if data:
+                tagSearch(data)
+            else:
+                print("no more data from", client_address)
+                break
 
-        finally:
-            # Clean up the connection
-            connection.close()
+    finally:
+        # Clean up the connection
+        connection.close()
+        print("connection closed")
