@@ -134,14 +134,12 @@ if __name__ == "__main__":
                             i += data[i + 3] + 4
                         else:
                             i += 1
-                else:
-                    logging.info("No more data from %s", client_address)
-                    pass
 
             except socket.timeout:
                 logging.error("Receive timed out")
                 connection.close()
                 exit()
+
             except Exception as e:
                 logging.error("Error: %s", e)
                 connection.close()
