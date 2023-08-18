@@ -97,7 +97,9 @@ if __name__ == "__main__":
     # Bind the socket to the port
     server_address = ("192.168.2.115", 8010)
 
-    logging.basicConfig(filename="rfid.log", level=logging.INFO)
+    logging.basicConfig(
+        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
+    )
 
     logging.info("Starting up on %s port %s" % server_address)
     sock.bind(server_address)
@@ -113,7 +115,6 @@ if __name__ == "__main__":
         except socket.timeout:
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             logging.error("Accept timed out")
-            logging.info("Timestamp: %s", timestamp)
 
     logging.info("Connection from %s", client_address)
 
