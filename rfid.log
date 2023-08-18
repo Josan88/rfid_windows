@@ -1,0 +1,13 @@
+INFO:root:Starting up on 192.168.2.115 port 8010
+INFO:root:Connection from ('192.168.2.159', 8179)
+ERROR:root:Error: 1054 (42S22): Unknown column 'vehicle_lastseen' in 'field list'
+INFO:root:Starting up on 192.168.2.115 port 8010
+INFO:root:Connection from ('192.168.2.159', 8191)
+INFO:root:Received: aaaaff06c10215e8a2
+INFO:root:Timestamp: 2023-08-18 13:45:52
+INFO:root:Tag found
+INFO:root:Received: aaaaff18c10200cf3000e2806995000050009125b19cacb500dafd
+INFO:root:Timestamp: 2023-08-18 13:45:54
+INFO:root:Tag found
+INFO:root:Received: aaaaff18c10200cd3000e2806995000050009125b19cacb5002abe
+INFO:root:Timestamp: 2023-08-18 13:46:10
