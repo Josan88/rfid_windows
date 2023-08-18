@@ -113,7 +113,6 @@ if __name__ == "__main__":
             connection, client_address = sock.accept()
             break
         except socket.timeout:
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             logging.error("Accept timed out")
 
     logging.info("Connection from %s", client_address)
