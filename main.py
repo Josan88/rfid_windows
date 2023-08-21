@@ -2,6 +2,9 @@ import time
 import socket
 import mysql.connector
 import logging
+import pystray
+from PIL import Image
+import subprocess
 
 
 # Connect to the database
@@ -88,36 +91,8 @@ def process_tag(mydb, tag, client_address):
             logging.info("Tag not found")
 
 
-if __name__ == "__main__":
-    # Create a TCP/IP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Set a timeout period on the socket
-    sock.settimeout(5)
-
-    # Bind the socket to the port
-    server_address = ("192.168.2.115", 8010)
-
-    logging.basicConfig(
-        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
-    )
-
-    logging.info("Starting up on %s port %s" % server_address)
-    sock.bind(server_address)
-
-    # Listen for incoming connections
-    sock.listen(1)
-
-    # Wait for a connection
-    while True:
-        try:
-            connection, client_address = sock.accept()
-            break
-        except socket.timeout:
-            logging.error("Accept timed out")
-
-    logging.info("Connection from %s", client_address)
-
+def on_connect(icon):
+    icon.visible = True
     with connect_to_database() as mydb:
         while True:
             try:
@@ -145,3 +120,63 @@ if __name__ == "__main__":
                 logging.error("Error: %s", e)
                 connection.close()
                 exit()
+
+
+if __name__ == "__main__":
+    # Clear log file
+    open("rfid.log", "w").close()
+
+    # Create a tray icon
+    image = Image.open("rfid-icon.jpg")
+
+    # Create a menu that pops up when the tray icon is clicked
+    # The menu has two options: Exit and Log
+    menu = pystray.Menu(
+        pystray.MenuItem(
+            "Exit",
+            lambda: (
+                icon.stop(),
+                connection.close(),
+                logging.info("Connection closed"),
+                exit(),
+            ),
+        ),
+        pystray.MenuItem(
+            "View log",
+            lambda: (subprocess.Popen(["notepad.exe", "rfid.log"])),
+        ),
+    )
+    # Create the tray icon
+    icon = pystray.Icon("RFID Reader", image, "RFID Reader", menu)
+
+    # Create a TCP/IP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Set a timeout period on the socket
+    sock.settimeout(5)
+
+    # Bind the socket to the port
+    server_address = ("0.0.0.0", 8010)
+
+    logging.basicConfig(
+        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
+    )
+
+    logging.info("Starting up on %s port %s" % server_address)
+    sock.bind(server_address)
+
+    # Listen for incoming connections
+    sock.listen(1)
+
+    # Wait for a connection
+    while True:
+        try:
+            connection, client_address = sock.accept()
+            break
+        except socket.timeout:
+            logging.error("Reader connection timed out")
+
+    logging.info("Connection from %s", client_address)
+
+    # Start the tray icon
+    icon.run(on_connect)
