@@ -25,7 +25,7 @@ def insert_record(mydb, epidString, timestamp, client_address):
 
 # Update an existing record in the database
 def update_record(mydb, epidString, timestamp, client_address):
-    sql = "UPDATE rfid SET car_lastseen = %s, reader_ip = %s WHERE epid = %s"
+    sql = "UPDATE registered_rfid SET car_lastseen = %s, reader_ip = %s WHERE epid = %s"
     val = (timestamp, client_address[0], epidString)
     with mydb.cursor() as mycursor:
         mycursor.execute(sql, val)
@@ -43,7 +43,7 @@ def update_reader(mydb, timestamp, client_address):
 
 # Check if a record exists in the database
 def select_record(mydb, epidString):
-    sql = "SELECT * FROM rfid WHERE epid = %s"
+    sql = "SELECT * FROM registered_rfid WHERE epid = %s"
     val = (epidString,)
     with mydb.cursor() as mycursor:
         mycursor.execute(sql, val)
