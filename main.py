@@ -174,7 +174,7 @@ if __name__ == "__main__":
     server_address = (config["server_ip"], config["server_port"])
 
     logging.info("Starting up on %s port %s" % server_address)
-    
+
     sock.bind(server_address)
 
     # Listen for incoming connections
