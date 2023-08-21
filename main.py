@@ -133,6 +133,10 @@ if __name__ == "__main__":
     # Clear log file
     open("rfid.log", "w").close()
 
+    logging.basicConfig(
+        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
+    )
+
     # Load config file
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
@@ -141,7 +145,7 @@ if __name__ == "__main__":
     image = Image.open("rfid-icon.jpg")
 
     # Create a menu that pops up when the tray icon is clicked
-    # The menu has two options: Exit and Log
+    # The menu has two options: View log and Exit
     menu = pystray.Menu(
         pystray.MenuItem(
             "View log",
@@ -169,11 +173,8 @@ if __name__ == "__main__":
     # Bind the socket to the port
     server_address = (config["server_ip"], config["server_port"])
 
-    logging.basicConfig(
-        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
-    )
-
     logging.info("Starting up on %s port %s" % server_address)
+    
     sock.bind(server_address)
 
     # Listen for incoming connections
