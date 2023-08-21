@@ -81,14 +81,16 @@ def process_tag(mydb, tag, client_address):
         # If tag is found, update the last_seen column
         # If tag is not found, insert the tag into the database
         resp = select_record(mydb, epidString)
-        if resp == True and epidString != "":
-            update_record(mydb, epidString, timestamp, client_address)
-            update_reader(mydb, timestamp, client_address)
-            insert_record(mydb, epidString, timestamp, client_address)
-            logging.info("Tag found")
+        
+        if epidString != "":
+            if resp == True:
+                update_record(mydb, epidString, timestamp, client_address)
+                update_reader(mydb, timestamp, client_address)
+                insert_record(mydb, epidString, timestamp, client_address)
+                logging.info("Tag found")
 
-        elif resp == False and epidString != "":
-            logging.info("Tag not found")
+            elif resp == False:
+                logging.info("Tag not found")
 
 
 def on_connect(icon):
