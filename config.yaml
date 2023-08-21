@@ -1,0 +1,8 @@
+sql:
+  db_host: localhost
+  db_user: rfid
+  db_password: softworld
+  db_name: stc
+
+server_ip: 0.0.0.0
+server_port: 8010

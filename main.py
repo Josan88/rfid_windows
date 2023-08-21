@@ -5,12 +5,16 @@ import logging
 import pystray
 from PIL import Image
 import subprocess
+import yaml
 
 
 # Connect to the database
 def connect_to_database():
     return mysql.connector.connect(
-        host="localhost", user="rfid", passwd="softworld", database="stc"
+        host=config["sql"]["db_host"],
+        user=config["sql"]["db_user"],
+        passwd=config["sql"]["db_password"],
+        database=config["sql"]["db_name"],
     )
 
 
@@ -81,7 +85,7 @@ def process_tag(mydb, tag, client_address):
         # If tag is found, update the last_seen column
         # If tag is not found, insert the tag into the database
         resp = select_record(mydb, epidString)
-        
+
         if epidString != "":
             if resp == True:
                 update_record(mydb, epidString, timestamp, client_address)
@@ -129,6 +133,10 @@ if __name__ == "__main__":
     # Clear log file
     open("rfid.log", "w").close()
 
+    # Load config file
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+
     # Create a tray icon
     image = Image.open("rfid-icon.jpg")
 
@@ -136,17 +144,16 @@ if __name__ == "__main__":
     # The menu has two options: Exit and Log
     menu = pystray.Menu(
         pystray.MenuItem(
+            "View log",
+            lambda: (subprocess.Popen(["notepad.exe", "rfid.log"])),
+        ),
+        pystray.MenuItem(
             "Exit",
             lambda: (
                 connection.close(),
                 logging.info("Connection closed"),
                 icon.stop(),
-                exit(),
             ),
-        ),
-        pystray.MenuItem(
-            "View log",
-            lambda: (subprocess.Popen(["notepad.exe", "rfid.log"])),
         ),
     )
 
@@ -160,7 +167,7 @@ if __name__ == "__main__":
     sock.settimeout(5)
 
     # Bind the socket to the port
-    server_address = ("0.0.0.0", 8010)
+    server_address = (config["server_ip"], config["server_port"])
 
     logging.basicConfig(
         filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
