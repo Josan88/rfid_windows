@@ -135,9 +135,9 @@ if __name__ == "__main__":
         pystray.MenuItem(
             "Exit",
             lambda: (
-                icon.stop(),
                 connection.close(),
                 logging.info("Connection closed"),
+                icon.stop(),
                 exit(),
             ),
         ),
@@ -146,6 +146,7 @@ if __name__ == "__main__":
             lambda: (subprocess.Popen(["notepad.exe", "rfid.log"])),
         ),
     )
+    
     # Create the tray icon
     icon = pystray.Icon("RFID Reader", image, "RFID Reader", menu)
 
