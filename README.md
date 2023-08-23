@@ -23,6 +23,11 @@ Functions:
 - process_tag(mydb, tag, client_address): Processes a single RFID tag and updates the database if necessary.
 - on_connect(icon): Callback function that is called when the system tray icon is clicked. Starts listening for incoming data on the TCP/IP socket.
 
+When the app is started, an icon title name "RFID Reader" will appear on the system tray.
+
+# Troubleshooting
+The log file is generated in the same directory as the script. The log file is named rfid.log. The log file is cleared every time the script is started.
+
 # License
 The license under which the project is released.
 
