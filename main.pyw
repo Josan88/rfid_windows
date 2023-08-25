@@ -128,26 +128,15 @@ def handle_client(client_sock, client_address):
 def on_connect(icon):
     icon.visible = True
     while True:
-        try:
-            # Wait for a connection
-            client_sock, client_address = sock.accept()
-            logging.info("Connection from %s", client_address)
+        # Wait for a connection
+        client_sock, client_address = sock.accept()
+        logging.info("Connection from %s", client_address)
 
-            # Create a new thread to handle the client connection
-            client_thread = threading.Thread(
-                target=handle_client, args=(client_sock, client_address)
-            )
-            client_thread.start()
-
-        except socket.timeout:
-            logging.error("Reader connection timed out")
-            ctypes.windll.user32.MessageBoxW(
-                0,
-                "Reader connection timed out. Please make sure reader is connected.",
-                "Error",
-                0,
-            )
-            os._exit(1)
+        # Create a new thread to handle the client connection
+        client_thread = threading.Thread(
+            target=handle_client, args=(client_sock, client_address)
+        )
+        client_thread.start()
 
 
 if __name__ == "__main__":
@@ -190,7 +179,6 @@ if __name__ == "__main__":
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Set a timeout period on the socket
-        sock.settimeout(1)
 
         # Bind the socket to the port
         server_address = (config["server_ip"], config["server_port"])
