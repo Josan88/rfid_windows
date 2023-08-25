@@ -27,8 +27,3 @@ When the app is started, an icon title name "RFID Reader" will appear on the sys
 
 # Troubleshooting
 The log file is generated in the same directory as the script. The log file is named rfid.log. The log file is cleared every time the script is started.
-
-# License
-The license under which the project is released.
-
-# Credits

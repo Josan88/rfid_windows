@@ -6,6 +6,7 @@ import pystray
 from PIL import Image
 import subprocess
 import yaml
+import ctypes
 
 
 # Connect to the database
@@ -130,65 +131,84 @@ def on_connect(icon):
 
 
 if __name__ == "__main__":
-    # Clear log file
-    open("rfid.log", "w").close()
+    try:
+        # Clear log file
+        open("rfid.log", "w").close()
 
-    logging.basicConfig(
-        filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
-    )
+        logging.basicConfig(
+            filename="rfid.log", level=logging.INFO, format="%(asctime)s %(message)s"
+        )
 
-    # Load config file
-    with open("config.yaml", "r") as f:
-        config = yaml.safe_load(f)
+        # Load config file
+        with open("config.yaml", "r") as f:
+            config = yaml.safe_load(f)
 
-    # Create a tray icon
-    image = Image.open("rfid-icon.jpg")
+        # Create a tray icon
+        image = Image.open("rfid-icon.jpg")
 
-    # Create a menu that pops up when the tray icon is clicked
-    # The menu has two options: View log and Exit
-    menu = pystray.Menu(
-        pystray.MenuItem(
-            "View log",
-            lambda: (subprocess.Popen(["notepad.exe", "rfid.log"])),
-        ),
-        pystray.MenuItem(
-            "Exit",
-            lambda: (
-                connection.close(),
-                logging.info("Connection closed"),
-                icon.stop(),
+        # Create a menu that pops up when the tray icon is clicked
+        # The menu has two options: View log and Exit
+        menu = pystray.Menu(
+            pystray.MenuItem(
+                "View log",
+                lambda: (subprocess.Popen(["notepad.exe", "rfid.log"])),
             ),
-        ),
-    )
+            pystray.MenuItem(
+                "Exit",
+                lambda: (
+                    connection.close(),
+                    logging.info("Connection closed"),
+                    icon.stop(),
+                ),
+            ),
+        )
 
-    # Create the tray icon
-    icon = pystray.Icon("RFID Reader", image, "RFID Reader", menu)
+        # Create the tray icon
+        icon = pystray.Icon("RFID Reader", image, "RFID Reader", menu)
 
-    # Create a TCP/IP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # Set a timeout period on the socket
-    sock.settimeout(5)
+        # Set a timeout period on the socket
+        sock.settimeout(5)
 
-    # Bind the socket to the port
-    server_address = (config["server_ip"], config["server_port"])
+        # Bind the socket to the port
+        server_address = (config["server_ip"], config["server_port"])
 
-    logging.info("Starting up on %s port %s" % server_address)
+        logging.info("Starting up on %s port %s" % server_address)
 
-    sock.bind(server_address)
+        sock.bind(server_address)
 
-    # Listen for incoming connections
-    sock.listen(1)
+        # Listen for incoming connections
+        sock.listen(1)
 
-    # Wait for a connection
-    while True:
-        try:
-            connection, client_address = sock.accept()
-            break
-        except socket.timeout:
-            logging.error("Reader connection timed out")
+        # Wait for a connection
+        while True:
+            try:
+                connection, client_address = sock.accept()
+                break
+            except socket.timeout:
+                logging.error("Reader connection timed out")
 
-    logging.info("Connection from %s", client_address)
+        logging.info("Connection from %s", client_address)
 
-    # Start the tray icon
-    icon.run(on_connect)
+        # Display message box when the program is running
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            "RFID Reader is running. Click the icon in the system tray to view log or exit.",
+            "RFID Reader",
+            0,
+        )
+
+        # Start the tray icon
+        icon.run(on_connect)
+
+    except Exception as e:
+        logging.error("Error: %s", e)
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            "An error has occurred. Please check the log file for more information.",
+            "Error",
+            0,
+        )
+        exit()
