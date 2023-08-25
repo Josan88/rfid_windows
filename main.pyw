@@ -7,6 +7,8 @@ from PIL import Image
 import subprocess
 import yaml
 import ctypes
+import threading
+import os
 
 
 # Connect to the database
@@ -98,13 +100,12 @@ def process_tag(mydb, tag, client_address):
                 logging.info("Tag not found")
 
 
-def on_connect(icon):
-    icon.visible = True
+def handle_client(client_sock, client_address):
     with connect_to_database() as mydb:
         while True:
             try:
                 # Receive data from the client
-                data = connection.recv(1024)
+                data = client_sock.recv(1024)
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 if data.hex() == "aaaaff06c10215e8a2":
                     update_reader(mydb, timestamp, client_address)
@@ -118,17 +119,35 @@ def on_connect(icon):
                             i += data[i + 3] + 4
                         else:
                             i += 1
+            except ConnectionResetError:
+                logging.info("Connection closed by client")
+                client_sock.close()
+                break
 
-            except socket.timeout:
-                logging.error("Receive timed out")
-                connection.close()
-                exit()
 
-            except Exception as e:
-                logging.error("Error: %s", e)
-                connection.close()
-                exit()
+def on_connect(icon):
+    icon.visible = True
+    while True:
+        try:
+            # Wait for a connection
+            client_sock, client_address = sock.accept()
+            logging.info("Connection from %s", client_address)
 
+            # Create a new thread to handle the client connection
+            client_thread = threading.Thread(
+                target=handle_client, args=(client_sock, client_address)
+            )
+            client_thread.start()
+
+        except socket.timeout:
+            logging.error("Reader connection timed out")
+            ctypes.windll.user32.MessageBoxW(
+                0,
+                "Reader connection timed out. Please make sure reader is connected.",
+                "Error",
+                0,
+            )
+            os._exit(1)
 
 if __name__ == "__main__":
     try:
@@ -156,7 +175,7 @@ if __name__ == "__main__":
             pystray.MenuItem(
                 "Exit",
                 lambda: (
-                    connection.close(),
+                    sock.close(),
                     logging.info("Connection closed"),
                     icon.stop(),
                 ),
@@ -170,7 +189,7 @@ if __name__ == "__main__":
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Set a timeout period on the socket
-        sock.settimeout(5)
+        sock.settimeout(1)
 
         # Bind the socket to the port
         server_address = (config["server_ip"], config["server_port"])
@@ -180,17 +199,7 @@ if __name__ == "__main__":
         sock.bind(server_address)
 
         # Listen for incoming connections
-        sock.listen(1)
-
-        # Wait for a connection
-        while True:
-            try:
-                connection, client_address = sock.accept()
-                break
-            except socket.timeout:
-                logging.error("Reader connection timed out")
-
-        logging.info("Connection from %s", client_address)
+        sock.listen()
 
         # Display message box when the program is running
         ctypes.windll.user32.MessageBoxW(
@@ -211,4 +220,4 @@ if __name__ == "__main__":
             "Error",
             0,
         )
-        exit()
+        os._exit(1)
