@@ -149,6 +149,7 @@ def on_connect(icon):
             )
             os._exit(1)
 
+
 if __name__ == "__main__":
     try:
         # Clear log file
