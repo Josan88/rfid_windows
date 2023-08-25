@@ -195,9 +195,9 @@ if __name__ == "__main__":
         # Display message box when the program is running
         ctypes.windll.user32.MessageBoxW(
             0,
-            "RFID Reader is running. Click the icon in the system tray to view log or exit.",
+            "RFID Reader is running. Click the tray icon to view the log file.",
             "RFID Reader",
-            0,
+            64,
         )
 
         # Start the tray icon
