@@ -1,7 +1,7 @@
 sql:
   db_host: localhost
-  db_user: rfid
-  db_password: softworld
+  db_user: root
+  db_password: 
   db_name: stc
 
 server_ip: 0.0.0.0
