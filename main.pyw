@@ -11,7 +11,7 @@ import threading
 import os
 
 
-# Connect to the database
+# Connect to the mysql database
 def connect_to_database():
     return mysql.connector.connect(
         host=config["sql"]["db_host"],
@@ -94,10 +94,10 @@ def process_tag(mydb, tag, client_address):
                 update_record(mydb, epidString, timestamp, client_address)
                 update_reader(mydb, timestamp, client_address)
                 insert_record(mydb, epidString, timestamp, client_address)
-                logging.info("Tag found")
+                logging.info("Tag updated: %s", epidString)
 
             elif resp == False:
-                logging.info("Tag not found")
+                logging.info("Tag not found: %s", epidString)
 
 
 def handle_client(client_sock, client_address):
@@ -178,13 +178,9 @@ if __name__ == "__main__":
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        # Set a timeout period on the socket
-
         # Bind the socket to the port
         server_address = (config["server_ip"], config["server_port"])
-
         logging.info("Starting up on %s port %s" % server_address)
-
         sock.bind(server_address)
 
         # Listen for incoming connections
