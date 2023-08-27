@@ -190,14 +190,6 @@ if __name__ == "__main__":
         # Listen for incoming connections
         sock.listen()
 
-        # Display message box when the program is running
-        ctypes.windll.user32.MessageBoxW(
-            0,
-            "RFID Reader is running. Click the tray icon to view the log file.",
-            "RFID Reader",
-            64,
-        )
-
         # Start the tray icon
         icon.run(on_connect)
 
