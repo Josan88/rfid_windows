@@ -109,7 +109,7 @@ def handle_client(client_sock, client_address):
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 if data.hex() == "aaaaff06c10215e8a2":
                     update_reader(mydb, timestamp, client_address)
-                    logging.info("Reader last seen updated")
+                    logging.info("Reader updated: %s", client_address[0])
                 elif data:
                     rawDataLength = len(data)
                     i = 0
@@ -120,7 +120,7 @@ def handle_client(client_sock, client_address):
                         else:
                             i += 1
             except ConnectionResetError:
-                logging.info("Connection closed by client")
+                logging.info("Connection closed")
                 client_sock.close()
                 break
 
