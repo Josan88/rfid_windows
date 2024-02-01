@@ -1,2 +1,19 @@
-2023-08-25 12:08:25,962 Starting up on 0.0.0.0 port 8010
-2023-08-25 12:08:29,022 Reader connection timed out
+2023-08-25 14:36:11,217 Starting up on 0.0.0.0 port 8010
+2023-08-25 14:36:51,036 Connection from ('192.168.2.159', 8109)
+2023-08-25 14:37:20,254 Reader last seen updated
+2023-08-25 14:37:46,081 Connection from ('192.168.2.159', 8106)
+2023-08-25 14:37:46,087 Reader last seen updated
+2023-08-25 14:38:08,282 Tag not found
+2023-08-25 14:38:09,293 Tag not found
+2023-08-25 14:38:09,294 Tag not found
+2023-08-25 14:38:10,302 Tag not found
+2023-08-25 14:38:11,311 Tag not found
+2023-08-25 14:38:27,322 Tag not found
+2023-08-25 14:38:28,332 Tag not found
+2023-08-25 14:38:44,340 Tag not found
+2023-08-25 14:38:47,356 Tag found
+2023-08-25 14:38:51,368 Tag found
+2023-08-25 14:38:52,421 Tag found
+2023-08-25 14:38:54,390 Tag found
+2023-08-25 14:38:55,401 Tag found
+2023-08-25 14:38:58,410 Tag found
