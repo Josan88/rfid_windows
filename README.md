@@ -1,8 +1,12 @@
 # Python RFID program
-A brief description of the project.
+This is a Python script that is used to read RFID tags and store the data in a MySQL database. The script is designed to run on a Windows machine. The script is designed to run as a background process and is started when the user logs in. The script is started by a batch file that is placed in the Windows startup folder. The script is also designed to run as a system tray application. The script creates a system tray icon that allows the user to view the log file and exit the script.
 
 # Installation
-Instructions on how to install the project.
+Clone the project
+```git clone https://github.com/Josan88/rfid_windows.git```
+
+Install the required packages
+```pip install -r requirements.txt```
 
 # Usage
 This script is used to read RFID tags and store the data in a MySQL database. It listens for incoming data on a TCP/IP socket and processes the data to extract RFID tag information. The script then checks if the tag is registered in the MySQL database. If the tag is registered, the script updates the last_seen column for the tag and inserts a new record into the car_logbook table. If the tag is not registered, the script logs the event and continues listening for incoming data.
@@ -23,7 +27,12 @@ Functions:
 - process_tag(mydb, tag, client_address): Processes a single RFID tag and updates the database if necessary.
 - on_connect(icon): Callback function that is called when the system tray icon is clicked. Starts listening for incoming data on the TCP/IP socket.
 
-When the app is started, an icon title name "RFID Reader" will appear on the system tray.
+# Future improvements
+- Add watchdog functionality to restart the script if it crashes.
+- Compile the script into an executable file.
+- Add a GUI to allow the user to add new RFID tags to the database.
+- Add a GUI to allow the user to view the RFID tags that are registered in the database.
+
 
 # Troubleshooting
 The log file is generated in the same directory as the script. The log file is named rfid.log. The log file is cleared every time the script is started.

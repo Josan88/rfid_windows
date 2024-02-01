@@ -25,40 +25,49 @@ def connect_to_database():
 def insert_record(mydb, epidString, timestamp, client_address):
     sql = "INSERT INTO car_logbook (epid, car_seen_datetime, reader_ip) VALUES (%s, %s, %s)"
     val = (epidString, timestamp, client_address[0])
-    with mydb.cursor() as mycursor:
+    mycursor = mydb.cursor()
+    try:
         mycursor.execute(sql, val)
         mydb.commit()
+    finally:
+        mycursor.close()
 
 
 # Update an existing record in the database
 def update_record(mydb, epidString, timestamp, client_address):
     sql = "UPDATE registered_rfid SET car_lastseen = %s, reader_ip = %s WHERE epid = %s"
     val = (timestamp, client_address[0], epidString)
-    with mydb.cursor() as mycursor:
+    mycursor = mydb.cursor()
+    try:
         mycursor.execute(sql, val)
         mydb.commit()
+    finally:
+        mycursor.close()
 
 
 # Update reader last seen in the database
 def update_reader(mydb, timestamp, client_address):
     sql = "UPDATE rfid_reader SET reader_lastseen = %s WHERE reader_ip = %s"
     val = (timestamp, client_address[0])
-    with mydb.cursor() as mycursor:
+    mycursor = mydb.cursor()
+    try:
         mycursor.execute(sql, val)
         mydb.commit()
+    finally:
+        mycursor.close()
 
 
 # Check if a record exists in the database
 def select_record(mydb, epidString):
     sql = "SELECT * FROM registered_rfid WHERE epid = %s"
     val = (epidString,)
-    with mydb.cursor() as mycursor:
-        mycursor.execute(sql, val)
-        myresult = mycursor.fetchall()
-        if myresult:
-            return True
-        else:
-            return False
+    mycursor = mydb.cursor()
+    mycursor.execute(sql, val)
+    myresult = mycursor.fetchall()
+    if myresult:
+        return True
+    else:
+        return False
 
 
 # CRC check function
@@ -101,28 +110,28 @@ def process_tag(mydb, tag, client_address):
 
 
 def handle_client(client_sock, client_address):
-    with connect_to_database() as mydb:
-        while True:
-            try:
-                # Receive data from the client
-                data = client_sock.recv(1024)
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                if data.hex() == "aaaaff06c10215e8a2":
-                    update_reader(mydb, timestamp, client_address)
-                    logging.info("Reader updated: %s", client_address[0])
-                elif data:
-                    rawDataLength = len(data)
-                    i = 0
-                    while i < rawDataLength:
-                        if data[i] == 170 and data[i + 1] == 170:
-                            process_tag(mydb, data[i:], client_address)
-                            i += data[i + 3] + 4
-                        else:
-                            i += 1
-            except ConnectionResetError:
-                logging.info("Connection closed")
-                client_sock.close()
-                break
+    mydb = connect_to_database()
+    while True:
+        try:
+            # Receive data from the client
+            data = client_sock.recv(1024)
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            if data.hex() == "aaaaff06c10215e8a2":
+                update_reader(mydb, timestamp, client_address)
+                logging.info("Reader updated: %s", client_address[0])
+            elif data:
+                rawDataLength = len(data)
+                i = 0
+                while i < rawDataLength:
+                    if data[i] == 170 and data[i + 1] == 170:
+                        process_tag(mydb, data[i:], client_address)
+                        i += data[i + 3] + 4
+                    else:
+                        i += 1
+        except ConnectionResetError:
+            logging.info("Connection closed")
+            client_sock.close()
+            break
 
 
 def on_connect(icon):
